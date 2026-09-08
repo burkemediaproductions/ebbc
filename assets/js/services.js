@@ -2,13 +2,12 @@ const EBC_FALLBACK_CATEGORIES = [
   {key:'facials', name:'Facial Treatments', url:'/facial-treatments.html', summary:'Glow-focused facial treatments and skin care rituals designed around hydration, relaxation, clarity, and a refreshed finish.', fallback_services:['Signature Facial','Glow Facial','Deep Cleansing Facial','Hydration Facial']},
   {key:'nails', name:'Manicure & Pedicure', url:'/manicure-pedicure.html', summary:'Detail-driven manicure and pedicure services for everyday polish, special moments, and a fresh self-care reset.', fallback_services:['Classic Manicure','Gel Manicure','Classic Pedicure','Gel Pedicure']},
   {key:'extensions', name:'Nail Extensions', url:'/nail-extensions.html', summary:'Structure, length, and style for clients who want durable, personalized nails with a polished finish.', fallback_services:['Acrylic Full Set','Builder Gel Overlay','Poly Gel Full Set','Extension Fill']},
-  {key:'massage', name:'Massage & Energy', url:'/massage-bodywork.html', summary:'Massage, bodywork, and energy services designed to ease tension, support rest, and create a grounded experience.', fallback_services:['Therapeutic Massage','Deep Tissue Massage','Maternity Massage','Relaxation Massage']},
   {key:'brows-lashes-waxing', name:'Brows, Lashes & Waxing', url:'/brows-lashes-waxing.html', summary:'Beauty finishing services that enhance natural features, simplify daily routines, and help clients feel put together.', fallback_services:['Brow Lamination','Lash Lift & Tint','Brow Wax','Facial Waxing']},
   {key:'mini-wellness', name:'Mini-Elevated Wellness', url:'/services.html?category=mini-wellness', summary:'Age-appropriate mini wellness services for ages 5-12, with a parent or caregiver present.', fallback_services:['Mini Mani','Mini Pedi','Mini Skin Care Routine']},
   {key:'addons', name:'Add-Ons & Nail Art', url:'/services.html?category=addons', summary:'Finishing touches, removals, nail art, charms, chrome, glitter, and service add-ons.', fallback_services:['Nail Art','Chrome','Frenchies','Removal']},
   {key:'special-occasion', name:'Special Occasion / Travel', url:'/special-occasion-beauty.html', summary:'Travel-friendly beauty services for special occasions across Desert Hot Springs, Palm Springs, the low desert, and select high desert communities.', fallback_services:['Event Beauty Prep','Bridal Party Beauty Services','Photoshoot Beauty Prep','Travel Service Consultation']}
 ];
-const EBC_CATEGORY_ORDER = ['facials','nails','extensions','brows-lashes-waxing','massage','mini-wellness','addons','special-occasion'];
+const EBC_CATEGORY_ORDER = ['facials','nails','extensions','brows-lashes-waxing','mini-wellness','addons','special-occasion'];
 const EBC_CATEGORY_BY_KEY = Object.fromEntries(EBC_FALLBACK_CATEGORIES.map(c=>[c.key,c]));
 function slugify(value){return String(value||'services').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'services'}
 function escapeHtml(value){return String(value||'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]))}
@@ -22,7 +21,6 @@ function inferCategory(service){
     return {key:slugify(originalKey), name:originalName || originalKey, url:`/services.html?category=${slugify(originalKey)}`, summary:`Browse ${originalName || originalKey} services from Crystal's online service menu.`};
   }
   if(/elevated skin care|facial|dermaplan|microderm|jelly mask|high frequency|bacne|pore rehab|hydrating|age-less|skin care/i.test(name)) return EBC_CATEGORY_BY_KEY.facials;
-  if(/massage|energy|stone|deep tissue|maternity|card reading|energy clearing|woo-saw|muscle relaxation/i.test(name)) return EBC_CATEGORY_BY_KEY.massage;
   if(/hair removal|wax|brow|lash|lami|lift|tint|underarm|bikini|sideburn|chin|lip|nose|ear/i.test(name)) return EBC_CATEGORY_BY_KEY['brows-lashes-waxing'];
   if(/mini-elevated|mini wellness|ages 5-12|mini mani|mini pedi|mini skin/i.test(name)) return EBC_CATEGORY_BY_KEY['mini-wellness'];
   if(/add on|add-on|chrome|cateye|charms|jewlery|jewelry|design|frenchies|glitter|removal|repair|foil|art tier|crystals custom/i.test(name)) return EBC_CATEGORY_BY_KEY.addons;
@@ -33,7 +31,7 @@ function inferCategory(service){
 }
 function normalizeBookingData(data){
   const rawServices=Array.isArray(data.services)?data.services:[];
-  const services=rawServices.map(service=>{const cat=inferCategory(service);return {...service, rawCategoryKey:service.categoryKey, rawCategoryName:service.categoryName, categoryKey:cat.key, categoryName:cat.name, categoryUrl:cat.url};});
+  const services=rawServices.filter(service=>!/massage|bodywork|deep tissue|maternity massage|therapeutic massage|relaxation massage/i.test(`${service.name||''} ${service.categoryName||''} ${service.categoryKey||''}`)).map(service=>{const cat=inferCategory(service);return {...service, rawCategoryKey:service.categoryKey, rawCategoryName:service.categoryName, categoryKey:cat.key, categoryName:cat.name, categoryUrl:cat.url};});
   const categoryMap=new Map();
   services.forEach(s=>{const cat=inferCategory(s); if(!categoryMap.has(cat.key)) categoryMap.set(cat.key,{...cat,count:0}); categoryMap.get(cat.key).count++;});
   let categories=[...categoryMap.values()].filter(c=>c.count>0);
